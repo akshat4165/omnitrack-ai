@@ -1,7 +1,7 @@
 const PLATFORM_CONFIG = {
   claude:   { name: 'Claude',   color: '#cc785c', icon: '🟠', limits: { pro: 45, max5x: 225, max20x: 900 } },
   chatgpt:  { name: 'ChatGPT',  color: '#10a37f', icon: '🟢', limits: { gpt54: 40, gpt52: 40 } },
-  gemini:   { name: 'Gemini',   color: '#4285f4', icon: '🔵', limits: { pro: 100, flash: 250, 'flash-lite': 1000 } }
+  gemini:   { name: 'Gemini',   color: '#4285f4', icon: '🔵', limits: { pro: 100, flash: 500, 'flash-lite': 1500, advanced: 1000 } }
 };
 
 // Always render all 3 platforms — merge stored data with empty defaults
@@ -63,7 +63,7 @@ function formatUsage(platform, data) {
     return `${data.used || 0} / 40 sent`;
   }
   const model = data.model || 'pro';
-  const limit = PLATFORM_CONFIG.gemini.limits[model] || 100;
+  const limit = PLATFORM_CONFIG.gemini.limits[model] || PLATFORM_CONFIG.gemini.limits.pro;
   return `${data.used || 0} / ${limit} today`;
 }
 
