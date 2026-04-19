@@ -7,17 +7,30 @@ window.addEventListener('message', (event) => {
 
   requestCount++;
 
-  chrome.runtime.sendMessage({
-    type: 'usage_update',
-    platform: 'gemini',
-    data: {
-      used: requestCount,
-      model: event.data.model || 'pro',
-      resetAt: event.data.resetAt,
-      rpm: event.data.rpm || 1
+  // chrome.runtime can be undefined when the MV3 service worker is sleeping
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+      chrome.runtime.sendMessage({
+        type: 'usage_update',
+        platform: 'gemini',
+        data: {
+          used: requestCount,
+          model: event.data.model || 'pro',
+          resetAt: event.data.resetAt,
+          rpm: event.data.rpm || 1
+        }
+      }, () => void chrome.runtime.lastError);
     }
-  }, () => {
-    // Suppress "no receiver" errors when background is sleeping
-    void chrome.runtime.lastError;
-  });
+  } catch (e) {
+    // Extension context invalidated — retry once after a short delay
+    setTimeout(() => {
+      try {
+        chrome.runtime.sendMessage({
+          type: 'usage_update',
+          platform: 'gemini',
+          data: { used: requestCount, model: event.data.model || 'pro', resetAt: event.data.resetAt, rpm: event.data.rpm || 1 }
+        }, () => void chrome.runtime.lastError);
+      } catch (_) {}
+    }, 500);
+  }
 });
