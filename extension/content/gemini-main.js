@@ -33,13 +33,15 @@
 
   // ── Intercept fetch ───────────────────────────────────────────────────────
   const _origFetch = window.fetch;
-  window.fetch = async function (...args) {
+  window.fetch = function (...args) {
     try {
       const req = args[0];
       const url = typeof req === 'string' ? req : (req?.url || '');
       const method = args[1]?.method || req?.method || 'GET';
       if (isGeminiChatRequest(url, method)) postTrackingMessage();
     } catch (_) {}
+    // Return the original promise directly — don't wrap in async
+    // so CSP errors propagate with the native stack trace
     return _origFetch.apply(this, args);
   };
 
