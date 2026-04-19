@@ -26,6 +26,12 @@
     },
     {
       "matches": ["*://gemini.google.com/*"],
+      "js": ["content/gemini-main.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["*://gemini.google.com/*"],
       "js": ["content/gemini.js"],
       "run_at": "document_start"
     }
