@@ -11,13 +11,13 @@ try {
   });
 } catch (_) { initialized = true; }
 
-function saveUsage(model, resetAt, rpm) {
+function saveUsage(model, resetAt) {
   if (!initialized) return;
   try {
     chrome.storage.local.get(['usage_gemini'], (result) => {
       if (chrome?.runtime?.lastError) return;
       const prev = result?.['usage_gemini'] || {};
-      const entry = { used: requestCount, model, resetAt, timestamp: Date.now() };
+      const entry = { used: requestCount, model: model || 'pro', resetAt: resetAt || 0, timestamp: Date.now() };
       chrome.storage.local.set({
         usage_gemini: {
           ...entry,
@@ -34,31 +34,53 @@ window.addEventListener('message', (event) => {
   if (!event.data || event.data.source !== 'omnitrack-gemini') return;
 
   requestCount++;
-  saveUsage(event.data.model || 'pro', event.data.resetAt || 0, event.data.rpm || 1);
+  saveUsage(event.data.model, event.data.resetAt);
 });
 
-// ── DOM fallback: watch for new model-response elements ────────────────────
+// ── DOM fallback: watch for new Gemini response elements ──────────────────
+// Covers cases where fetch/XHR interception misses (SPA navigation, etc.)
+const RESPONSE_SELECTORS = [
+  'model-response',
+  '[class*="model-response"]',
+  '[class*="response-container"]',
+  'message-content',
+  '[data-response-index]',
+  '[class*="BotMessage"]',
+  '[class*="assistant-message"]',
+].join(', ');
+
 let domBaseCount = 0;
+let lastFetchCount = 0;
 
 function startDOMObserver() {
-  domBaseCount = document.querySelectorAll('model-response').length;
+  // Count existing responses so we don't double-count on load
+  try {
+    domBaseCount = document.querySelectorAll(RESPONSE_SELECTORS).length;
+  } catch(_) {}
 
   const observer = new MutationObserver(() => {
-    const current = document.querySelectorAll('model-response').length;
-    if (current > domBaseCount) {
-      const newOnes = current - domBaseCount;
-      domBaseCount = current;
-      const countBefore = requestCount;
-      setTimeout(() => {
-        if (requestCount === countBefore) {
-          for (let i = 0; i < newOnes; i++) requestCount++;
-          saveUsage('pro', 0, 1);
-        }
-      }, 2000);
-    }
+    try {
+      const current = document.querySelectorAll(RESPONSE_SELECTORS).length;
+      if (current > domBaseCount) {
+        const newOnes = current - domBaseCount;
+        domBaseCount = current;
+
+        // Wait 3s — if fetch interception already counted it, skip
+        const fetchCountNow = requestCount;
+        setTimeout(() => {
+          if (requestCount === fetchCountNow) {
+            // Fetch missed it — use DOM count
+            for (let i = 0; i < newOnes; i++) requestCount++;
+            saveUsage('pro', 0);
+          }
+        }, 3000);
+      }
+    } catch(_) {}
   });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  try {
+    observer.observe(document.body, { childList: true, subtree: true });
+  } catch(_) {}
 }
 
 if (document.readyState === 'loading') {
