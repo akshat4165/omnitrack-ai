@@ -7,6 +7,7 @@
   "host_permissions": [
     "*://claude.ai/*",
     "*://chat.openai.com/*",
+    "*://chatgpt.com/*",
     "*://gemini.google.com/*"
   ],
   "background": {
@@ -19,7 +20,7 @@
       "run_at": "document_start"
     },
     {
-      "matches": ["*://chat.openai.com/*"],
+      "matches": ["*://chat.openai.com/*", "*://chatgpt.com/*"],
       "js": ["content/chatgpt.js"],
       "run_at": "document_idle"
     },
