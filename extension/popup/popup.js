@@ -1,43 +1,46 @@
 const PLATFORM_CONFIG = {
-  claude: { name: 'Claude', color: '#cc785c', limits: { pro: 45, max5x: 225, max20x: 900 } },
-  chatgpt: { name: 'ChatGPT', color: '#10a37f', limits: { gpt54: 40, gpt52: 40 } },
-  gemini: { name: 'Gemini', color: '#4285f4', limits: { pro: 100, flash: 250, flashlite: 1000 } }
+  claude:   { name: 'Claude',   color: '#cc785c', icon: '🟠', limits: { pro: 45, max5x: 225, max20x: 900 } },
+  chatgpt:  { name: 'ChatGPT',  color: '#10a37f', icon: '🟢', limits: { gpt54: 40, gpt52: 40 } },
+  gemini:   { name: 'Gemini',   color: '#4285f4', icon: '🔵', limits: { pro: 100, flash: 250, 'flash-lite': 1000 } }
 };
 
+// Always render all 3 platforms — merge stored data with empty defaults
 function render() {
   chrome.runtime.sendMessage({ type: 'get_usage' }, (data) => {
-    const container = document.getElementById('content');
-    if (!data || Object.keys(data).length === 0) {
-      container.innerHTML = '<div class="empty">Open Claude, ChatGPT, or Gemini to start tracking</div>';
-      return;
-    }
+    if (chrome.runtime.lastError) return; // extension context invalidated
 
-    container.innerHTML = Object.entries(data).map(([platform, usage]) => {
-      const config = PLATFORM_CONFIG[platform];
-      const pct = calculatePercentage(platform, usage);
+    const container = document.getElementById('content');
+    const stored = data || {};
+
+    const platforms = Object.entries(PLATFORM_CONFIG).map(([id, config]) => {
+      const usage = stored[id] || null;
+      const pct = usage ? calculatePercentage(id, usage) : 0;
       const status = pct > 90 ? 'danger' : pct > 70 ? 'warning' : '';
-      const predictive = calculatePredictive(platform, usage);
+      const predictive = usage ? calculatePredictive(id, usage) : null;
+      const active = !!usage;
 
       return `
-        <div class="platform">
+        <div class="platform ${active ? '' : 'inactive'}">
           <div class="platform-header">
             <div class="platform-name">
-              <span class="status-dot ${status}"></span>
+              <span class="status-dot ${status} ${active ? '' : 'idle'}"></span>
               ${config.name}
             </div>
-            <div class="percentage">${Math.round(pct)}%</div>
+            <div class="percentage">${active ? Math.round(pct) + '%' : '—'}</div>
           </div>
           <div class="bar-container">
             <div class="bar-fill" style="width: ${Math.min(pct, 100)}%"></div>
           </div>
           <div class="stats">
-            <span>${formatUsage(platform, usage)}</span>
-            <span>${formatTime(usage.windowEnd || usage.resetAt)}</span>
+            <span>${active ? formatUsage(id, usage) : 'No data yet'}</span>
+            <span>${active ? formatTime(usage.windowEnd || usage.resetAt) : ''}</span>
           </div>
           ${predictive ? `<div class="predictive">${predictive}</div>` : ''}
         </div>
       `;
-    }).join('');
+    });
+
+    container.innerHTML = platforms.join('');
   });
 }
 
@@ -47,18 +50,21 @@ function calculatePercentage(platform, data) {
   if (data.tier && limits[data.tier]) limit = limits[data.tier];
   if (data.model && limits[data.model]) limit = limits[data.model];
 
-  const used = data.total ? (data.total - data.remaining) : data.used;
+  const used = data.total ? (data.total - data.remaining) : (data.used || 0);
   return Math.min((used / limit) * 100, 100);
 }
 
 function formatUsage(platform, data) {
   if (platform === 'claude') {
-    return `${data.remaining}/${data.total} left`;
+    if (data.remaining == null) return 'Tracking…';
+    return `${data.remaining} / ${data.total} left`;
   }
   if (platform === 'chatgpt') {
-    return `~${data.used}/40 sent`;
+    return `${data.used || 0} / 40 sent`;
   }
-  return `${data.used}/${PLATFORM_CONFIG[platform].limits[data.model || 'pro']} today`;
+  const model = data.model || 'pro';
+  const limit = PLATFORM_CONFIG.gemini.limits[model] || 100;
+  return `${data.used || 0} / ${limit} today`;
 }
 
 function formatTime(timestamp) {
@@ -74,7 +80,9 @@ function calculatePredictive(platform, data) {
   if (!data.history || data.history.length < 3) return null;
   const recent = data.history.slice(-5);
   const avgInterval = (recent[recent.length - 1].timestamp - recent[0].timestamp) / recent.length;
-  const remaining = data.remaining || (PLATFORM_CONFIG[platform].limits.pro - data.used);
+  const remaining = data.remaining != null
+    ? data.remaining
+    : (PLATFORM_CONFIG[platform].limits.pro - (data.used || 0));
   const timeToEmpty = (remaining * avgInterval) / 60000;
 
   if (timeToEmpty < 30) return `⚠️ ${Math.round(timeToEmpty)}min until limit at current pace`;

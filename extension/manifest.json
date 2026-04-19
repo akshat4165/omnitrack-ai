@@ -27,7 +27,7 @@
     {
       "matches": ["*://gemini.google.com/*"],
       "js": ["content/gemini.js"],
-      "run_at": "document_idle"
+      "run_at": "document_start"
     }
   ],
   "action": {
