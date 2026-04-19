@@ -6,14 +6,18 @@ window.addEventListener('message', (event) => {
   if (!event.data || event.data.source !== 'omnitrack-gemini') return;
 
   requestCount++;
+
   chrome.runtime.sendMessage({
     type: 'usage_update',
     platform: 'gemini',
     data: {
       used: requestCount,
-      model: event.data.model,
+      model: event.data.model || 'pro',
       resetAt: event.data.resetAt,
-      rpm: event.data.rpm
+      rpm: event.data.rpm || 1
     }
+  }, () => {
+    // Suppress "no receiver" errors when background is sleeping
+    void chrome.runtime.lastError;
   });
 });
