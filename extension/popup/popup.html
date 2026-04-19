@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>OmniTrack AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 380px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f0f; color: #fff; padding: 16px; }
+    .header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .header h1 { font-size: 18px; font-weight: 600; background: linear-gradient(90deg, #10a37f, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .platform { background: #1a1a1a; border-radius: 12px; padding: 14px; margin-bottom: 12px; border: 1px solid #2a2a2a; }
+    .platform-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .platform-name { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #10a37f; }
+    .status-dot.warning { background: #f59e0b; }
+    .status-dot.danger { background: #ef4444; }
+    .percentage { font-size: 20px; font-weight: 700; }
+    .bar-container { height: 6px; background: #2a2a2a; border-radius: 3px; overflow: hidden; margin: 8px 0; }
+    .bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; background: linear-gradient(90deg, #10a37f 0%, #10a37f 60%, #f59e0b 80%, #ef4444 100%); background-size: 100% 100%; }
+    .stats { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-top: 8px; }
+    .predictive { font-size: 11px; color: #6366f1; margin-top: 6px; font-weight: 500; }
+    .empty { text-align: center; color: #666; padding: 40px; font-size: 13px; }
+    .sync-btn { width: 100%; padding: 10px; background: #2a2a2a; border: none; color: #fff; border-radius: 8px; cursor: pointer; font-size: 13px; margin-top: 8px; transition: background 0.2s; }
+    .sync-btn:hover { background: #3a3a3a; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>OmniTrack AI</h1>
+  </div>
+  <div id="content"></div>
+  <button class="sync-btn" id="dashboardBtn">Open Full Dashboard</button>
+  <script src="popup.js"></script>
+</body>
+</html>
