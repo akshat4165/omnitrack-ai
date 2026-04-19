@@ -1,13 +1,22 @@
 let messageCount = 0;
 let windowStart = null;
 let modelType = 'gpt54';
+let lastSentCount = 0;
 
 const observer = new MutationObserver((mutations) => {
   const userMessages = document.querySelectorAll('[data-message-author-role="user"]').length;
-  const modelBadge = document.querySelector('[data-testid="model-selector"]')?.textContent || '';
 
-  if (modelBadge.includes('5.4')) modelType = 'gpt54';
-  if (modelBadge.includes('5.2')) modelType = 'gpt52';
+  // Multiple fallback selectors for model badge (ChatGPT updates DOM frequently)
+  const modelBadge = (
+    document.querySelector('[data-testid="model-switcher-dropdown-button"]')?.textContent ||
+    document.querySelector('[data-testid="model-selector"]')?.textContent ||
+    document.querySelector('button[aria-haspopup="listbox"]')?.textContent ||
+    document.querySelector('#model-selector')?.textContent ||
+    ''
+  );
+
+  if (modelBadge.toLowerCase().includes('5.4') || modelBadge.toLowerCase().includes('gpt-4o')) modelType = 'gpt54';
+  if (modelBadge.toLowerCase().includes('5.2') || modelBadge.toLowerCase().includes('gpt-4')) modelType = 'gpt52';
 
   if (userMessages !== messageCount) {
     messageCount = userMessages;
